@@ -1,0 +1,143 @@
+import sys
+sys.stdin=open('input.txt')
+input=sys.stdin.readline
+
+### 1. 입력 받기 ###
+# 격자의 크기 : n, 박멸이 진행되는 년 수 : m, 제초제의 확산 범위 k, 제초제가 남아있는 년 수 c
+n,m,k,c = map(int, input().split())
+# 나무의 그루 수, 벽의 정보. 나무의 그루 수는 1 이상 100 이하. 빈칸은 0, 벽은 -1
+graph=[]
+wall=[]
+for i in range(n):
+    graph.append(list(map(int, input().split())))
+    # 벽은 제초제와 헷갈리지 않게 -1이 아니라 10001으로 저장할것임.
+    for j in range(n):
+        if graph[i][j]==-1:
+            graph[i][j]=10001
+
+
+### 2. 함수 정의 ###
+# 상하좌우 정의
+dx,dy=[-1,1,0,0],[0,0,1,-1]
+# 대각선 정의
+dxx,dyy=[-1,1,1,-1],[1,1,-1,-1]
+
+# 나무의 성장
+def growth(x,y):
+    cnt=0
+    for i in range(4):
+        nx=dx[i]+x
+        ny=dy[i]+y
+        if 0<=nx<n and 0<=ny<n and 1<=graph[nx][ny]<10000:
+            cnt+=1
+    graph[x][y]+=cnt
+
+#나무의 번식
+def breeding():
+    r_graph=[[0]*(n+1) for _ in range(n+1)] # 번식을 위해 임시로 값을 저장해 둘 배열
+    for i in range(n):
+        for j in range(n):
+            cnt=0
+            r_breed=0
+            if 1<=graph[i][j]<10000:
+                for k in range(4):
+                    nx=dx[k]+i
+                    ny=dy[k]+j
+                    if 0<=nx<n and 0<=ny<n and graph[nx][ny]==0:
+                        cnt+=1
+                if cnt>=1:
+                    r_breed=graph[i][j]//cnt
+                for k in range(4):
+                    nx=dx[k]+i
+                    ny=dy[k]+j
+                    if 0<=nx<n and 0<=ny<n and graph[nx][ny]==0:
+                        r_graph[nx][ny]+=r_breed
+    for i in range(n):
+        for j in range(n):
+            graph[i][j]+=r_graph[i][j]
+
+# 제초제 뿌릴 장소 정하기 + 제초제 뿌리기. 입력: 제초제의 확산 범위
+def weedkiller(k,c,killers):
+    max_value=0
+    r_graph=[[0]*n for _ in range(n)] # 제초제 번식을 위해 저장
+    for i in range(n):
+        for j in range(n):
+            # 제초제를 뿌릴 수 있는 공간이면 일단 본인부터 r_graph를 넣음
+            if 1<=graph[i][j]<10000:
+                a,b=i,j
+                r_graph[i][j]+=graph[i][j]
+                for l in range(4):
+                    # k의 범위만큼 대각선으로 전진
+                    for _ in range(k):
+                        nx=dxx[l]+a
+                        ny=dyy[l]+b
+                        if 0<=nx<n and 0<=ny<n:
+                            # 대각선으로 이동했는데 제초제로 없어질 수 있는 정도이면
+                            if graph[nx][ny]<10000:
+                                if graph[nx][ny]>=1:
+                                    r_graph[i][j]+=graph[nx][ny]
+                                    a,b=nx,ny
+                                # 더이상 이동하지 못하면 다른 방향으로 가도록 빠져나옴 
+                                elif graph[nx][ny]<=0:
+                                    a,b=i,j                        
+                                    break
+                        else:
+                            a,b=i,j
+                            break
+                    a,b=i,j
+                # 제초제로 죽일 수 있는 최대구간 구하기위해,..
+                if r_graph[i][j]>max_value:
+                    max_value=r_graph[i][j]
+                    killers=[[i,j]]
+                elif graph[i][j]==max_value:
+                    killers.append([i,j])
+    # 안되는 부분도 고려해주어야 함
+    if len(killers)==0:
+        return 0      
+    killers.sort(key=lambda x:(x[0],x[1]))
+
+    #killers=[]
+    # 제초제 뿌릴 곳 찾았으니 뿌리기
+    graph[killers[0][0]][killers[0][1]]=-c
+    for i in range(4):
+        a,b=killers[0][0],killers[0][1]
+        for _ in range(k):
+            nx=dxx[i]+a
+            ny=dyy[i]+b
+            if 0<=nx<n and 0<=ny<n:
+                if 1<=graph[nx][ny]<10000:
+                    # 년수 저장하기 위해 -c해줌.
+                    graph[nx][ny]=-c
+                    a,b=nx,ny
+                elif graph[nx][ny]==0:
+                    #0인 부분까지 제초제를 설치하고 앞으로 나아가는 것을 멈춤.
+                    graph[nx][ny]=-c
+                    a,b=killers[0][0],killers[0][1]
+                    break
+                elif graph[nx][ny]<0:
+                    # 제일 마지막으로 추가한 부분
+                    graph[nx][ny]=-c
+                    a,b=killers[0][0],killers[0][1]
+                    break
+            else:
+                a,b=killers[0][0],killers[0][1]
+                break
+    return max_value
+
+result=0
+year=0
+for _ in range(m):
+    for i in range(n):
+        for j in range(n):
+            if 1<=graph[i][j]<10000:
+                growth(i,j)
+    breeding()
+    killers=[]
+    #제초제 위치 선정하고 뿌리기 전에 +1 해줌
+    for i in range(n):
+            for j in range(n):
+                if graph[i][j]<0:
+                    graph[i][j]+=1
+    num=weedkiller(k,c,killers)
+    result+=num
+print(result)
