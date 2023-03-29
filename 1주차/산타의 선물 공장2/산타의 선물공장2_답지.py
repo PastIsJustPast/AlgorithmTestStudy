@@ -1,3 +1,9 @@
+'''
+Complexity
+- Time Comp: O(q+n+m)
+- Memory Comp: O(n+m)
+'''
+
 MAX_N = 100000
 MAX_M = 100000
 
