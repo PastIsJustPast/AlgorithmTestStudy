@@ -1,5 +1,5 @@
 """
-정리 안하고 그대로 올립니닷..!
+정리 안하고 그대로 올립니닷..! git commit comment 링크(https://github.com/PastIsJustPast/AlgorithmTestStudy/commit/03b29d7147061c96d4d54efb75f7abaf12f762a4)를 참고해주세요
 ""'
 """
 n*n 
